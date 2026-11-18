@@ -43,13 +43,15 @@ is before its pickup.
 After the first three rules, the average speed of a ride (distance divided by
 duration) was checked. How many rides each limit would remove:
 
-| Rule on the average speed | Rides removed |
+| Rule on the average speed | Rides it would remove |
 |---|---|
 | Over 50 mph | 1,265 |
 | Over 60 mph | 424 |
 | Over 80 mph | 306 |
 | Over 100 mph | 253 |
 | Over 150 mph | 188 |
+
+These rows show what each limit **would** remove. Only the 50 mph rule is used in the project, so all rides up to 50 mph are kept in the data and in the model. A limit of 25 mph (the city default) was only measured and not used: it would remove about 5.1% of the rides.
 
 Speed percentiles of these rides: 50% = 9.6 mph, 99% = 35.4 mph,
 99.9% = 45.9 mph, 99.99% = 71.4 mph.
