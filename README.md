@@ -1,143 +1,142 @@
-# Model Deployment Project
+# Taxi Trip Duration API
 
-Use this repository as a **template** for your model deployment project. You will train a regression model that predicts the duration of NYC Yellow Taxi trips, track your experiments locally with MLflow, and serve predictions through a FastAPI app on your own machine. Create pull requests in your own copy even if you are working alone, and use them to track your progress.
+Predicts how many minutes a New York City yellow taxi ride will take. The model
+is a random forest. It learns from the January 2025 trip records. Runs are
+tracked in MLflow, and the registered model is served by a FastAPI service with
+a `/predict` endpoint.
 
-## Learning Objectives
+**Results:** see the [RESULTS](RESULTS/) folder. This README has no result
+numbers. It explains the work and every decision.
 
-By the end of this repository, you should be able to:
+## Why this project is also a study
 
-- Build an end-to-end regression workflow for real-world taxi trip data.
-- Separate exploration, preprocessing, training, and serving concerns into maintainable code.
-- Track experiments locally with MLflow and compare model runs.
-- Serve model predictions through a local API.
+The task is small. I use it to learn, so at every step I write down the other
+options, what I chose, and why. The decisions are in a table further down.
+Experiments that are not done yet are listed at the end as follow-up ideas.
 
-## Learning Path
+## What is in this repository
 
-```mermaid
-flowchart LR
-    A["Download<br>Yellow Taxi data"] --> B["Explore and clean<br>features"]
-    B --> C["Train Random Forest<br>Regressor"]
-    C --> D["Track runs<br>in MLflow"]
-    D --> E["Package preprocessing<br>and model"]
-    E --> F["Serve predictions<br>with FastAPI"]
-    F --> G["Send local<br>test request"]
-```
-
-| File / Folder | Description |
+| Path | What it is |
 |---|---|
-| [**Project Description**](project-description.md) | The assignment tasks, suggested workflow, repository layout, and stretch goals. |
+| `src/prepare_data.py` | Loads the raw file and applies the four cleaning rules. |
+| `src/train.py` | Trains the random forest, logs it to MLflow, registers it and sets the alias. |
+| `app/main.py` | The FastAPI service with its two routes. |
+| `app/schemas.py` | The input and output rules of the API. |
+| `app/model.py` | Loads the model from the registry and predicts for one ride. |
+| `sample-request.json` | An example request for the API. |
+| `RESULTS/` | All measured numbers. |
+| `data/` | The raw data. It is not in git, and you download it. |
 
-### Additional Folders and Files
+Generated files are not in git: `data/`, `mlflow.db` and `mlartifacts/` (see
+`.gitignore`).
 
-| File / Folder | Description |
-|---|---|
-| [**pyproject.toml**](pyproject.toml) | Project configuration and dependencies. |
-| [**uv.lock**](uv.lock) | Dependency lock file. |
+## Requirements
 
-## Setup
+- Python 3.13 and [uv](https://docs.astral.sh/uv/). uv installs the packages.
+- About 60 MB of disk space for the data file.
 
-Use [uv](https://docs.astral.sh/uv/getting-started/installation/) 0.13.5 or newer
-and Python 3.13.17 or a newer 3.13 patch release, as defined in
-[`.python-version`](.python-version).
+## Run it, step by step
 
-> [!NOTE]
-> Throughout these steps, text in angle brackets like `<repo-name>` is a **placeholder**. Replace it, including the `< >` brackets, with your own value. For example, `cd <repo-name>` becomes `cd mle-model-deployment-project`.
+All commands run in the project folder. They were run on Windows with Git Bash.
+You need three terminals, because the MLflow server and the API keep running.
 
-### 1. Create the Repository from the Template
+**1. Install the packages**
 
-Click **Use this template** on GitHub.
-
-When creating the repository:
-
-- Set yourself as the **Owner**
-- Choose a repository name
-- Disable **Include all branches**
-- Click **Create repository**
-
-> [!IMPORTANT]
-> If you are working in pairs or groups, only **one person** should complete this step.
-
----
-
-### 2. Add Collaborators (Pairs/Groups Only)
-
-If working with teammates:
-
-1. Open the repository on GitHub
-2. Go to **Settings → Collaborators**
-3. Add your teammates as collaborators
-4. Share the repository link with your team
-
-Teammates should accept the invitation before continuing.
-
----
-
-### 3. Clone the Repository
-
-Copy the SSH URL from the **Code** button on GitHub, then run:
-
-```bash
-git clone <copied-ssh-url>
-```
-
-The copied SSH URL will look like `git@github.com:<your-username>/<repo-name>.git`.
-
----
-
-### 4. Move into the Project Folder and Install Dependencies
-
-This installs all dependencies and creates a virtual environment in `.venv/`.
-
-```bash
-cd <repo-name>
+~~~bash
 uv sync
-```
+~~~
 
----
+**2. Download the data** (one Parquet file, January 2025)
 
-### 5. Open the Repository in VS Code
+~~~bash
+mkdir -p data
+curl -L -o data/yellow_tripdata_2025-01.parquet https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2025-01.parquet
+~~~
 
-> [!NOTE]
-> Make sure you open VS Code from the project root so it automatically detects the environment created by `uv sync`.
+**3. Start the MLflow server** (terminal 1, keep it open)
 
-Launch VS Code in the project root folder:
+~~~bash
+uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlartifacts --allowed-hosts "localhost:5000,127.0.0.1:5000,host.docker.internal:5000"
+~~~
 
-```bash
-code .
-```
+**4. Train and register the model** (terminal 2)
 
-If you create a notebook to explore the data, select the Python environment created by `uv sync` as the kernel.
+~~~bash
+uv run python -m src.train
+~~~
 
-## How to Use This Repo
+This logs the run to MLflow, registers the model as `taxi-trip-duration-rf` and
+puts the alias `production` on the new version.
 
-1. Read the assignment brief in [project-description.md](project-description.md).
-2. Download and inspect the January 2025 Yellow Taxi dataset.
-3. Train a baseline `RandomForestRegressor` and track runs locally with MLflow.
-4. Refactor preprocessing and training logic into reusable Python modules.
-5. Build a local prediction API with FastAPI.
-6. Send a test request to the API and document the outcome in your README or PR.
+**5. Start the API** (terminal 3, keep it open)
 
-### Working Locally
+~~~bash
+uv run uvicorn app.main:app --port 8000
+~~~
 
-Once you have implemented the project code, a typical local workflow looks like this:
+MLflow must already be running, because the API loads the model once when it
+starts.
 
-1. Train the model and log runs to the local `mlruns/` directory with MLflow.
-2. Start the tracking UI:
+**6. Send a request** (terminal 2)
 
-   ```bash
-   uv run mlflow ui --backend-store-uri ./mlruns --port 5000
-   ```
+~~~bash
+curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -d @sample-request.json
+~~~
 
-3. Run the API locally:
+The answer holds the ride data and `predicted_duration` in minutes. A request
+that breaks the input rules gets HTTP 422 and a message that says which rule.
 
-   ```bash
-   uv run uvicorn app.main:app --reload --port 8000
-   ```
+## Decisions
 
-4. Send a request to the API:
+Each row names the options I looked at, what I chose, and why. Numbers that
+back a decision are in [RESULTS](RESULTS/).
 
-   ```bash
-   curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -d @sample-request.json
-   ```
+| Decision | Options | Choice | Reason |
+|---|---|---|---|
+| Getting the data | download with curl, read the web address in Python, download in the browser | curl, once, into `data/` | Every run uses the same file, works offline, and the README can show the command. |
+| Cleaning the duration | fixed range of 1 to 60 minutes, cut at percentiles, keep everything | 1 to 60 minutes | Simple to explain and keeps almost all rides. Percentile limits move with every new month. Keeping everything is a follow-up study. |
+| Other cleaning rules | none, or distance above 0 and pickup in January | distance above 0, pickup inside January 2025 | A ride with no distance carries no signal for this model. The task is about January. |
+| Speed rule | none, a fixed distance cap, a limit on the average speed of 25, 50 or 80 mph | average speed at most 50 mph | The city default limit is 25 mph, so a much higher average over a whole ride is not believable. 25 mph would remove real highway and airport rides, because it is an average. |
+| Train and validation split | random 80/20, split by time | random 80/20, seed 42 | Simple and standard. A split by time is closer to real use and is a follow-up study. |
+| Metric | RMSE only, RMSE plus MAE plus a naive baseline | RMSE (the task), MAE, and a naive baseline that always answers the mean | The naive baseline shows whether the model learned anything. |
+| Inputs of the model | zone IDs as plain numbers, one-hot zones, one route feature | the two zone IDs as numbers and the trip distance | Cheap on millions of rides and the same three inputs as the API. An ID is a label, so this is not a clean choice. |
+| Model settings | default forest, a leaf limit, more data | 50 trees, leaf limit 20, a training sample of 200,000 rides | The default forest was far too large to store and load. The leaf limit made it smaller and also better in the test. All rides gave a small gain for a very large model. |
+| Where MLflow keeps data | folder `./mlruns`, SQLite file plus a local server | SQLite file plus a local server | It supports the model registry and aliases. |
+| Which model the API uses | a fixed version, an alias | the alias `production` | Moving the alias changes the model without changing the API code. |
+| Saving the model | trust nothing, trust one reviewed type | trust `sklearn.tree._tree.Tree` only | MLflow saves scikit-learn models in a safe format that refuses unknown types, and a random forest holds trees of this type. I trained the model myself. |
+| Types of the inputs | let pandas choose, force int64 and float64 | force int64 and float64 | The API receives plain JSON numbers, so the model signature must match. |
+| API routes | one route, a single and a batch route | `GET /` and `POST /predict` | The task asks for `/predict`. A batch route is a follow-up. |
+| API input rules | none, or checks on every field | id not empty, both zones above 0, distance above 0 and at most 50 miles | The model never saw a longer ride. Bad input is refused with HTTP 422 before the model is called. |
+| When the API loads the model | once at startup, on every request | once at startup | Faster. The price is a restart when the model changes, and MLflow must be running at start. |
 
-The `app/` package and `sample-request.json` are files you create during the project. Make the sample request match your `/predict` input schema before running the commands above.
+## Limits
+
+- The model sees only the two zones and the distance. It does not know the time
+  of day or the weekday, so its error is large for short rides.
+- It was trained on rides of 1 to 60 minutes. Its answers for longer rides are
+  not reliable.
+- One month of data and one random split. Nothing was repeated with other seeds.
+- The leaf limit was chosen on the validation set, so the reported error is
+  slightly optimistic. A separate test set would fix this.
+- The API needs MLflow running when it starts, and it needs a restart to use a
+  new model version.
+- The API has no automatic tests yet, and it was not run in Docker.
+
+## Follow-up ideas
+
+These are not done yet. Each one is a possible next study.
+
+- A simple linear model as a second baseline, and a second model family.
+- Cleaning studies: percentile limits, no duration limit, stricter speed limits.
+- A split by time, and a separate test set that is used only once.
+- More inputs: hour of the day, weekday, one-hot zones, a route feature.
+- Tuning with grid search or Optuna, and training on all rides with a larger leaf limit.
+- Tests for the data, the model and the API.
+- Running the API in Docker.
+- A batch route, an upper limit for the zone IDs, and zone IDs as float columns.
+- Loading the model on every request, and the `./mlruns` way of tracking.
+
+## Data and license
+
+Data: NYC Taxi and Limousine Commission trip record data (yellow taxi, January
+2025). See the `LICENSE` file for the license of this repository.
