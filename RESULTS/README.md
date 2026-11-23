@@ -2,7 +2,7 @@
 
 All numbers of this project live in this folder. The main README explains the
 decisions and has no numbers. The values in files 01 to 03 were measured on
-18 November 2026 and the values in files 04 and 05 on 23 November 2026, always
+18 November 2026 and the values in files 04 to 06 on 23 November 2026, always
 on the author's laptop (Windows, Git Bash), with the random seed 42.
 
 | File | What it holds |
@@ -12,6 +12,7 @@ on the author's laptop (Windows, Git Bash), with the random seed 42.
 | [03-api.md](03-api.md) | The real requests to the API and its answers, including the refused ones. |
 | [04-february-test.md](04-february-test.md) | The baseline model tested on February, a month it has never seen. |
 | [05-time-features.md](05-time-features.md) | Four models with and without the pickup hour and weekday, tested on January and February. |
+| [06-speed-limit.md](06-speed-limit.md) | Five models trained with speed limits from 25 to 50 mph, tested on the same rides. |
 
 ## Environment
 
