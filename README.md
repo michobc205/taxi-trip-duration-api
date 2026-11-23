@@ -96,7 +96,7 @@ back a decision are in [RESULTS](RESULTS/).
 | Getting the data | download with curl, read the web address in Python, download in the browser | curl, once, into `data/` | Every run uses the same file, works offline, and the README can show the command. |
 | Cleaning the duration | fixed range of 1 to 60 minutes, cut at percentiles, keep everything | 1 to 60 minutes | Simple to explain and keeps almost all rides. Percentile limits move with every new month. Keeping everything is a follow-up study. |
 | Other cleaning rules | none, or distance above 0 and pickup in January | distance above 0, pickup inside January 2025 | A ride with no distance carries no signal for this model. The task is about January. |
-| Speed rule | none, a fixed distance cap, a limit on the average speed of 25, 50 or 80 mph | average speed at most 50 mph | The city default limit is 25 mph, so a much higher average over a whole ride is not believable. 25 mph would remove real highway and airport rides, because it is an average. |
+| Speed rule | none, a fixed distance cap, a limit on the average speed of 25, 50 or 80 mph | average speed at most 50 mph | The city default limit is 25 mph, so a much higher average over a whole ride is not believable. 25 mph would remove normal rides, for example highway and airport trips, because it is an average. |
 | Train and validation split | random 80/20, split by time | random 80/20, seed 42 | Simple and standard. A split by time is closer to real use and is a follow-up study. |
 | Metric | RMSE only, RMSE plus MAE plus a naive baseline | RMSE (the task), MAE, and a naive baseline that always answers the mean | The naive baseline shows whether the model learned anything. |
 | Inputs of the model | zone IDs as plain numbers, one-hot zones, one route feature | the two zone IDs as numbers and the trip distance | Cheap on millions of rides and the same three inputs as the API. An ID is a label, so this is not a clean choice. |
@@ -138,5 +138,12 @@ These are not done yet. Each one is a possible next study.
 
 ## Data and license
 
-Data: NYC Taxi and Limousine Commission trip record data (yellow taxi, January
-2025). See the `LICENSE` file for the license of this repository.
+Data: public NYC Taxi and Limousine Commission (TLC) trip record data, yellow
+taxi, January 2025, from the
+[TLC trip record page](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page).
+The data was not created by the TLC, and the TLC makes no promise that it is
+accurate. This project is not connected to the TLC. The data files are not part
+of this repository. Please check the terms of use on the TLC and nyc.gov pages
+before you reuse the data.
+
+The `LICENSE` file is the license of this repository (the code only).
