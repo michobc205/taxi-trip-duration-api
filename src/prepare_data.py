@@ -16,20 +16,20 @@ MAX_MINUTES = 60
 MAX_MPH = 50  # average speed of a ride; the city default limit is 25 mph
 
 
-def load_clean_data(path=DATA_PATH):
-    """Load the raw file and keep only the rides that pass the cleaning rules."""
+def load_clean_data(path=DATA_PATH, month="2025-01"):
+    """Load the raw file and keep only the rides of one month that pass the cleaning rules."""
     df = pd.read_parquet(path, columns=COLUMNS)
     df["duration"] = (
         df["tpep_dropoff_datetime"] - df["tpep_pickup_datetime"]
     ).dt.total_seconds() / 60
-    in_january = (df["tpep_pickup_datetime"] >= "2025-01-01") & (
-        df["tpep_pickup_datetime"] < "2025-02-01"
-    )
+    start = pd.Timestamp(month + "-01")
+    end = start + pd.offsets.MonthBegin(1)
+    in_month = (df["tpep_pickup_datetime"] >= start) & (df["tpep_pickup_datetime"] < end)
     ok_duration = df["duration"].between(MIN_MINUTES, MAX_MINUTES)
     ok_distance = df["trip_distance"] > 0
     mph = df["trip_distance"] / (df["duration"] / 60)
     ok_speed = mph <= MAX_MPH
-    return df[in_january & ok_duration & ok_distance & ok_speed].reset_index(drop=True)
+    return df[in_month & ok_duration & ok_distance & ok_speed].reset_index(drop=True)
 
 
 if __name__ == "__main__":
