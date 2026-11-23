@@ -21,6 +21,7 @@ Experiments that are not done yet are listed at the end as follow-up ideas.
 | `src/prepare_data.py` | Loads the raw file and applies the four cleaning rules. |
 | `src/train.py` | Trains the random forest, logs it to MLflow, registers it and sets the alias. |
 | `src/study_february.py` | Tests the January model on February, a month it has never seen. |
+| `src/study_time_features.py` | Tests whether the pickup hour and weekday help the model. |
 | `app/main.py` | The FastAPI service with its two routes. |
 | `app/schemas.py` | The input and output rules of the API. |
 | `app/model.py` | Loads the model from the registry and predicts for one ride. |
@@ -102,6 +103,7 @@ back a decision are in [RESULTS](RESULTS/).
 | Testing on a new month | none, February as a test set only, train on January and February | February as a test set only | The registered model stays the same, so this checks it on rides it has not seen. Training on both months would change the model and leave no new data to test on. See [RESULTS](RESULTS/). |
 | Metric | RMSE only, RMSE plus MAE plus a naive baseline | RMSE (the task), MAE, and a naive baseline that always answers the mean | The naive baseline shows whether the model learned anything. |
 | Inputs of the model | zone IDs as plain numbers, one-hot zones, one route feature | the two zone IDs as numbers and the trip distance | Cheap on millions of rides and the same three inputs as the API. An ID is a label, so this is not a clean choice. |
+| Time inputs | none, hour only, weekday only, hour and weekday, other ways to encode time | hour and weekday as plain numbers, tested as a study only | The baseline does not know the time of day, and the study shows that the hour and the weekday help (see [RESULTS](RESULTS/)). The registered model and the API do not use them yet, because that needs a new input field and a new model version. Other ways to encode the time were not tried. |
 | Model settings | default forest, a leaf limit, more data | 50 trees, leaf limit 20, a training sample of 200,000 rides | The default forest was far too large to store and load. The leaf limit made it smaller and also better in the test. All rides gave a small gain for a very large model. |
 | Where MLflow keeps data | folder `./mlruns`, SQLite file plus a local server | SQLite file plus a local server | It supports the model registry and aliases. |
 | Which model the API uses | a fixed version, an alias | the alias `production` | Moving the alias changes the model without changing the API code. |
@@ -113,8 +115,9 @@ back a decision are in [RESULTS](RESULTS/).
 
 ## Limits
 
-- The model sees only the two zones and the distance. It does not know the time
-  of day or the weekday, so its error is large for short rides.
+- The registered model sees only the two zones and the distance. It does not know
+  the time of day or the weekday. A study with the hour and the weekday gave a
+  lower error (see RESULTS), but the registered model and the API do not use them yet.
 - It was trained on rides of 1 to 60 minutes. Its answers for longer rides are
   not reliable.
 - One month of data for training and one random split. The model was also tested
@@ -134,7 +137,8 @@ These are not done yet. Each one is a possible next study.
 - Cleaning studies: percentile limits, no duration limit, stricter speed limits.
 - A separate test set that is used only once, and a split by time with more months
   (February is done, see RESULTS).
-- More inputs: hour of the day, weekday, one-hot zones, a route feature.
+- More inputs: one-hot zones, a route feature, and other ways to encode the hour
+  (hour and weekday as plain numbers are done, see RESULTS).
 - Tuning with grid search or Optuna, and training on all rides with a larger leaf limit.
 - Tests for the data, the model and the API.
 - Running the API in Docker.
