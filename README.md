@@ -39,7 +39,7 @@ Generated files are not in git: `data/`, `mlflow.db`, `mlartifacts/` and `model/
 ## Requirements
 
 - Python 3.13 and [uv](https://docs.astral.sh/uv/). uv installs the packages.
-- About 60 MB of disk space for the data file.
+- About 120 MB of disk space for the data files (January, and February for the studies).
 - Docker, only for the part "Run it in Docker". The image needs several GB of disk space.
 
 ## Run it, step by step
@@ -146,7 +146,30 @@ docker stop taxi-api
 
 The MLflow server does not need to run for steps 3 to 5. The container uses the
 model as it was when you exported it. For a new model version, export again and
-build again. The result of a test run is in [RESULTS](RESULTS/).
+build again. The result of a Docker run is in [RESULTS](RESULTS/).
+
+## Run the studies
+
+The three studies in `src/` test ideas beyond the task. They need the January
+file and the February file in `data/`. They do not use MLflow, and they do not
+change the registered model or the API. A run can take a few minutes.
+
+Download the February file (step 2 above downloads the January file):
+
+~~~bash
+curl -L -o data/yellow_tripdata_2025-02.parquet https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2025-02.parquet
+~~~
+
+Then run the studies one by one:
+
+~~~bash
+uv run python -m src.study_february
+uv run python -m src.study_time_features
+uv run python -m src.study_speed_limit
+~~~
+
+What each study asks and what it found is in [RESULTS](RESULTS/):
+`04-february-test.md`, `05-time-features.md` and `06-speed-limit.md`.
 
 ## Decisions
 
@@ -219,7 +242,7 @@ These are not done yet. Each one is a possible next study.
 ## Data and license
 
 Data: public NYC Taxi and Limousine Commission (TLC) trip record data, yellow
-taxi, January 2025, from the
+taxi, January 2025 for the model and February 2025 for the studies, from the
 [TLC trip record page](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page).
 The data was not created by the TLC, and the TLC makes no promise that it is
 accurate. This project is not connected to the TLC. The data files are not part
