@@ -22,6 +22,7 @@ Experiments that are not done yet are listed at the end as follow-up ideas.
 | `src/train.py` | Trains the random forest, logs it to MLflow, registers it and sets the alias. |
 | `src/study_february.py` | Tests the January model on February, a month it has never seen. |
 | `src/study_time_features.py` | Tests whether the pickup hour and weekday help the model. |
+| `src/study_speed_limit.py` | Tests training only on rides up to a lower average speed. |
 | `app/main.py` | The FastAPI service with its two routes. |
 | `app/schemas.py` | The input and output rules of the API. |
 | `app/model.py` | Loads the model from the registry and predicts for one ride. |
@@ -99,6 +100,7 @@ back a decision are in [RESULTS](RESULTS/).
 | Cleaning the duration | fixed range of 1 to 60 minutes, cut at percentiles, keep everything | 1 to 60 minutes | Simple to explain and keeps almost all rides. Percentile limits move with every new month. Keeping everything is a follow-up study. |
 | Other cleaning rules | none, or distance above 0 and pickup in January | distance above 0, pickup inside January 2025 | A ride with no distance carries no signal for this model. The task is about January. |
 | Speed rule | none, a fixed distance cap, a limit on the average speed of 25, 50 or 80 mph | average speed at most 50 mph | The city default limit is 25 mph, so a much higher average over a whole ride is not believable. 25 mph would remove normal rides, for example highway and airport trips, because it is an average. |
+| Stricter speed limits for training | limits of 25, 30, 35 or 40 mph instead of 50 | keep 50 mph | Five models were trained with limits from 25 to 50 mph and tested on the same rides. The stricter limits were a little better on slow rides and much worse on fast rides, and 50 mph was best overall (see [RESULTS](RESULTS/)). Limits above 50 mph were not tried. |
 | Train and validation split | random 80/20, split by time | random 80/20, seed 42 | Simple and standard. A split by time is closer to real use, so I also tried one with February (next row). |
 | Testing on a new month | none, February as a test set only, train on January and February | February as a test set only | The registered model stays the same, so this checks it on rides it has not seen. Training on both months would change the model and leave no new data to test on. See [RESULTS](RESULTS/). |
 | Metric | RMSE only, RMSE plus MAE plus a naive baseline | RMSE (the task), MAE, and a naive baseline that always answers the mean | The naive baseline shows whether the model learned anything. |
@@ -134,7 +136,8 @@ back a decision are in [RESULTS](RESULTS/).
 These are not done yet. Each one is a possible next study.
 
 - A simple linear model as a second baseline, and a second model family.
-- Cleaning studies: percentile limits, no duration limit, stricter speed limits.
+- Cleaning studies: percentile limits, no duration limit, and speed limits above
+  50 mph (limits of 25 to 40 mph were tried, see RESULTS).
 - A separate test set that is used only once, and a split by time with more months
   (February is done, see RESULTS).
 - More inputs: one-hot zones, a route feature, and other ways to encode the hour
