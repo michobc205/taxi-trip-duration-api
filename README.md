@@ -23,21 +23,24 @@ Experiments that are not done yet are listed at the end as follow-up ideas.
 | `src/study_february.py` | Tests the January model on February, a month it has never seen. |
 | `src/study_time_features.py` | Tests whether the pickup hour and weekday help the model. |
 | `src/study_speed_limit.py` | Tests training only on rides up to a lower average speed. |
+| `src/export_model.py` | Exports the registered model to the folder `model/` for the Docker image. |
 | `app/main.py` | The FastAPI service with its two routes. |
 | `app/schemas.py` | The input and output rules of the API. |
 | `app/model.py` | Loads the model from the registry and predicts for one ride. |
 | `tests/` | Automatic tests for the cleaning rules and the API. They use a fake model, so they need no MLflow server or data file. |
+| `Dockerfile` | Builds the image that runs the API in a container. |
 | `sample-request.json` | An example request for the API. |
 | `RESULTS/` | All measured numbers. |
 | `data/` | The raw data. It is not in git, and you download it. |
 
-Generated files are not in git: `data/`, `mlflow.db` and `mlartifacts/` (see
+Generated files are not in git: `data/`, `mlflow.db`, `mlartifacts/` and `model/` (see
 `.gitignore`).
 
 ## Requirements
 
 - Python 3.13 and [uv](https://docs.astral.sh/uv/). uv installs the packages.
 - About 60 MB of disk space for the data file.
+- Docker, only for the part "Run it in Docker". The image needs several GB of disk space.
 
 ## Run it, step by step
 
@@ -101,6 +104,50 @@ uv run pytest
 
 The result of a run is in [RESULTS](RESULTS/).
 
+## Run it in Docker
+
+The container holds the API and an exported copy of the model, so it needs no
+MLflow server. Docker must be running. Steps 1 to 4 of "Run it, step by step"
+come first, because the export needs the registered model. Stop the API from
+step 5 before you start the container, because both use port 8000.
+
+**1. Export the model** (the MLflow server from step 3 must be running)
+
+~~~bash
+uv run python -m src.export_model
+~~~
+
+This copies the model that carries the alias `production` into the folder
+`model/`.
+
+**2. Build the image** (the first build downloads all packages and takes a while)
+
+~~~bash
+docker build -t taxi-trip-duration-api .
+~~~
+
+**3. Start the container**
+
+~~~bash
+docker run --rm -d --name taxi-api -p 8000:8000 taxi-trip-duration-api
+~~~
+
+**4. Send a request** (the same request as in step 6 above)
+
+~~~bash
+curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -d @sample-request.json
+~~~
+
+**5. Stop the container**
+
+~~~bash
+docker stop taxi-api
+~~~
+
+The MLflow server does not need to run for steps 3 to 5. The container uses the
+model as it was when you exported it. For a new model version, export again and
+build again. The result of a test run is in [RESULTS](RESULTS/).
+
 ## Decisions
 
 Each row names the options I looked at, what I chose, and why. Numbers that
@@ -127,6 +174,8 @@ back a decision are in [RESULTS](RESULTS/).
 | API input rules | none, or checks on every field | id not empty, both zones above 0, distance above 0 and at most 50 miles | The model never saw a longer ride. Bad input is refused with HTTP 422 before the model is called. |
 | Automatic tests | none, tests with the real model and an MLflow server, tests with a fake model | tests with a fake model | They run in a few seconds and need no server and no data file. They check the cleaning rules and the API contract, but not the quality of the real model. That is in [RESULTS](RESULTS/). |
 | When the API loads the model | once at startup, on every request | once at startup | Faster. The price is a restart when the model changes, and MLflow must be running at start. |
+| Docker and the model files | the container reads the model from the MLflow server, a copy of the model inside the image | a copy of the model inside the image, made by `src/export_model.py` | MLflow keeps the model files at a path on my disk, which a container cannot read, so it could not load the model even with the server reachable. The image needs no server. The price is an export and a new build whenever the model changes. |
+| Docker base image and packages | python image with pip, python image with uv and `uv.lock` | `python:3.13-slim` with uv and `uv.lock` | The image gets exactly the package versions that are pinned in `uv.lock`. The image is large, see [RESULTS](RESULTS/), because the lock file also holds the MLflow server and the tuning tools. |
 
 ## Limits
 
@@ -140,10 +189,13 @@ back a decision are in [RESULTS](RESULTS/).
 - The leaf limit was chosen on the validation set, so the reported error is
   slightly optimistic. The February test gave a similar error, so the effect looks
   small. A separate test set that is used only once would still be cleaner.
-- The API needs MLflow running when it starts, and it needs a restart to use a
-  new model version.
+- Without Docker, the API needs MLflow running when it starts, and it needs a
+  restart to use a new model version.
 - The tests use a fake model. They do not test the real registered model, the
-  training script or the loading from MLflow. The API was not run in Docker.
+  training script or the loading from MLflow. The tests are not run in the
+  container.
+- The model in the Docker image is the copy from the moment of the export. The
+  container runs as root, and the image is large.
 
 ## Follow-up ideas
 
@@ -159,7 +211,8 @@ These are not done yet. Each one is a possible next study.
 - Tuning with grid search or Optuna, and training on all rides with a larger leaf limit.
 - More tests: the training script, the real model and the loading from MLflow
   (tests for the cleaning rules and the API are done, see RESULTS).
-- Running the API in Docker.
+- Docker next steps: a smaller image, a non-root user, and Docker Compose with
+  MLflow (the container with an exported model is done, see RESULTS).
 - A batch route, an upper limit for the zone IDs, and zone IDs as float columns.
 - Loading the model on every request, and the `./mlruns` way of tracking.
 

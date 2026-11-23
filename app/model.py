@@ -7,10 +7,19 @@ import pandas as pd
 TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
 MODEL_NAME = os.getenv("REGISTERED_MODEL_NAME", "taxi-trip-duration-rf")
 MODEL_ALIAS = os.getenv("MODEL_ALIAS", "production")
+# If MODEL_PATH is set, the model is read from this folder and MLflow is not needed.
+# The Docker image uses this: it holds an exported copy of the model.
+MODEL_PATH = os.getenv("MODEL_PATH")
 
 
 def load_model():
-    """Load the model that carries the alias. Called once, when the API starts."""
+    """Load the model once, when the API starts.
+
+    With MODEL_PATH set, it comes from that folder. Otherwise it is the model that
+    carries the alias in the MLflow registry.
+    """
+    if MODEL_PATH:
+        return mlflow.pyfunc.load_model(MODEL_PATH)
     mlflow.set_tracking_uri(TRACKING_URI)
     return mlflow.pyfunc.load_model(f"models:/{MODEL_NAME}@{MODEL_ALIAS}")
 
