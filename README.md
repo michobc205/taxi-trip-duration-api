@@ -26,6 +26,7 @@ Experiments that are not done yet are listed at the end as follow-up ideas.
 | `app/main.py` | The FastAPI service with its two routes. |
 | `app/schemas.py` | The input and output rules of the API. |
 | `app/model.py` | Loads the model from the registry and predicts for one ride. |
+| `tests/` | Automatic tests for the cleaning rules and the API. They use a fake model, so they need no MLflow server or data file. |
 | `sample-request.json` | An example request for the API. |
 | `RESULTS/` | All measured numbers. |
 | `data/` | The raw data. It is not in git, and you download it. |
@@ -89,6 +90,17 @@ curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" -
 The answer holds the ride data and `predicted_duration` in minutes. A request
 that breaks the input rules gets HTTP 422 and a message that says which rule.
 
+## Run the tests
+
+The tests need no data file and no MLflow server. They use tiny made-up files and
+a fake model. The test settings are in `pyproject.toml`.
+
+~~~bash
+uv run pytest
+~~~
+
+The result of a run is in [RESULTS](RESULTS/).
+
 ## Decisions
 
 Each row names the options I looked at, what I chose, and why. Numbers that
@@ -113,6 +125,7 @@ back a decision are in [RESULTS](RESULTS/).
 | Types of the inputs | let pandas choose, force int64 and float64 | force int64 and float64 | The API receives plain JSON numbers, so the model signature must match. |
 | API routes | one route, a single and a batch route | `GET /` and `POST /predict` | The task asks for `/predict`. A batch route is a follow-up. |
 | API input rules | none, or checks on every field | id not empty, both zones above 0, distance above 0 and at most 50 miles | The model never saw a longer ride. Bad input is refused with HTTP 422 before the model is called. |
+| Automatic tests | none, tests with the real model and an MLflow server, tests with a fake model | tests with a fake model | They run in a few seconds and need no server and no data file. They check the cleaning rules and the API contract, but not the quality of the real model. That is in [RESULTS](RESULTS/). |
 | When the API loads the model | once at startup, on every request | once at startup | Faster. The price is a restart when the model changes, and MLflow must be running at start. |
 
 ## Limits
@@ -129,7 +142,8 @@ back a decision are in [RESULTS](RESULTS/).
   small. A separate test set that is used only once would still be cleaner.
 - The API needs MLflow running when it starts, and it needs a restart to use a
   new model version.
-- The API has no automatic tests yet, and it was not run in Docker.
+- The tests use a fake model. They do not test the real registered model, the
+  training script or the loading from MLflow. The API was not run in Docker.
 
 ## Follow-up ideas
 
@@ -143,7 +157,8 @@ These are not done yet. Each one is a possible next study.
 - More inputs: one-hot zones, a route feature, and other ways to encode the hour
   (hour and weekday as plain numbers are done, see RESULTS).
 - Tuning with grid search or Optuna, and training on all rides with a larger leaf limit.
-- Tests for the data, the model and the API.
+- More tests: the training script, the real model and the loading from MLflow
+  (tests for the cleaning rules and the API are done, see RESULTS).
 - Running the API in Docker.
 - A batch route, an upper limit for the zone IDs, and zone IDs as float columns.
 - Loading the model on every request, and the `./mlruns` way of tracking.
