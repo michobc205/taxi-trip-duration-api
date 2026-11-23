@@ -204,7 +204,7 @@ back a decision are in [RESULTS](RESULTS/).
 
 - The registered model sees only the two zones and the distance. It does not know
   the time of day or the weekday. A study with the hour and the weekday gave a
-  lower error (see RESULTS), but the registered model and the API do not use them yet.
+  lower error (see [RESULTS](RESULTS/)), but the registered model and the API do not use them yet.
 - It was trained on rides of 1 to 60 minutes. Its answers for longer rides are
   not reliable.
 - One month of data for training and one random split. The model was also tested
@@ -226,16 +226,16 @@ These are not done yet. Each one is a possible next study.
 
 - A simple linear model as a second baseline, and a second model family.
 - Cleaning studies: percentile limits, no duration limit, and speed limits above
-  50 mph (limits of 25 to 40 mph were tried, see RESULTS).
+  50 mph (limits of 25 to 40 mph were tried, see [RESULTS](RESULTS/)).
 - A separate test set that is used only once, and a split by time with more months
-  (February is done, see RESULTS).
+  (February is done, see [RESULTS](RESULTS/)).
 - More inputs: one-hot zones, a route feature, and other ways to encode the hour
-  (hour and weekday as plain numbers are done, see RESULTS).
+  (hour and weekday as plain numbers are done, see [RESULTS](RESULTS/)).
 - Tuning with grid search or Optuna, and training on all rides with a larger leaf limit.
 - More tests: the training script, the real model and the loading from MLflow
-  (tests for the cleaning rules and the API are done, see RESULTS).
+  (tests for the cleaning rules and the API are done, see [RESULTS](RESULTS/)).
 - Docker next steps: a smaller image, a non-root user, and Docker Compose with
-  MLflow (the container with an exported model is done, see RESULTS).
+  MLflow (the container with an exported model is done, see [RESULTS](RESULTS/)).
 - A batch route, an upper limit for the zone IDs, and zone IDs as float columns.
 - Loading the model on every request, and the `./mlruns` way of tracking.
 
