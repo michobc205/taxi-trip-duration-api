@@ -16,7 +16,7 @@ registered model, so no MLflow server and no data file are needed.
 |---|---|---|
 | `tests/test_prepare_data.py` | 16 | The four cleaning rules, all rules together, the duration in minutes and the month setting. |
 | `tests/test_api.py` | 18 | The API contract: the answers, the input of the model and the refused requests. |
-| `tests/test_model.py` | 2 | That `predict_duration` rounds to two decimals and returns a plain float. |
+| `tests/test_model.py` | 4 | That `predict_duration` rounds to two decimals and returns a plain float, and that the model is loaded from the folder in `MODEL_PATH` when it is set and by its alias when not (with a fake `mlflow`). |
 | `tests/conftest.py` | none | The fake model that the other tests share. |
 
 Cleaning rules, 13 single cases. Kept: a normal ride, exactly 1 minute, exactly
@@ -33,7 +33,7 @@ not called for bad input; a GET request to `/predict` gets HTTP 405.
 ## Result
 
 Run on 23 November 2026 on the author's laptop (Windows, Git Bash) with
-`uv run --locked pytest -q`: 36 passed in 3.96 seconds (16 + 18 + 2).
+`uv run --locked pytest -q`: 38 passed in 5.76 seconds (16 + 18 + 4).
 
 ## Not tested and limits
 

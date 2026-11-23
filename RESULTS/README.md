@@ -2,7 +2,7 @@
 
 All numbers of this project live in this folder. The main README explains the
 decisions and has no numbers. The values in files 01 to 03 were measured on
-18 November 2026 and the values in files 04 to 07 on 23 November 2026, always
+18 November 2026 and the values in files 04 to 08 on 23 November 2026, always
 on the author's laptop (Windows, Git Bash), with the random seed 42.
 
 | File | What it holds |
@@ -14,6 +14,7 @@ on the author's laptop (Windows, Git Bash), with the random seed 42.
 | [05-time-features.md](05-time-features.md) | Four models with and without the pickup hour and weekday, tested on January and February. |
 | [06-speed-limit.md](06-speed-limit.md) | Five models trained with speed limits from 25 to 50 mph, tested on the same rides. |
 | [07-tests.md](07-tests.md) | The automatic tests: what they check and the result of a run. |
+| [08-docker.md](08-docker.md) | The API in a Docker container, with an exported copy of the model and no MLflow server. |
 
 ## Environment
 
